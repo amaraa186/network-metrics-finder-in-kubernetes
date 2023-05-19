@@ -1,0 +1,50 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: containers-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: containers
+spec:
+  selector:
+    matchLabels:
+      app: containers
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: containers
+    spec:
+      containers:
+        - name: terminal-container
+          image: python:latest
+          command: ["sleep", "infinity"]
+          volumeMounts:
+            - name: log-volume
+              mountPath: /logs
+            - name: code-volume
+              mountPath: /mnt
+        - name: log-container
+          image: ubuntu
+          command: ["sleep", "infinity"]
+          volumeMounts:
+            - name: log-volume
+              mountPath: /logs
+      volumes:
+        - name: log-volume
+          persistentVolumeClaim:
+            claimName: containers-pvc
+        - name: code-volume
+          configMap:
+            name: containers-configmap
